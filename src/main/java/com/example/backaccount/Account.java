@@ -1,5 +1,6 @@
 package com.example.backaccount;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -15,27 +16,42 @@ public class Account {
         balance = 0.0;
         transactions = new ArrayList<>();
     }
-
+    @PreAuthorize("hasRole('ROLE_USER')")
     public void deposit(double amount) {
         validatePositiveAmount(amount);
         balance += amount;
         addTransaction(amount, TransactionType.DEPOSIT);
     }
-
+    @PreAuthorize("hasRole('ROLE_USER')")
     public void withdraw(double amount) {
         validatePositiveAmount(amount);
-        validateSufficientBalance(amount);
-        balance -= amount;
-        addTransaction(-amount, TransactionType.WITHDRAWAL);
+        double withdrawalAmount = -Math.abs(amount); // Create a negative withdrawal amount
+        validateSufficientBalance(withdrawalAmount);
+        balance += withdrawalAmount;
+        addTransaction(withdrawalAmount, TransactionType.WITHDRAWAL);
+    }
+
+    public List<Transaction> getTransactionHistory() {
+        return new ArrayList<>(transactions);
     }
 
     public String getStatement() {
         StringBuilder statement = new StringBuilder("Date\t\tAmount\t\tBalance\t\tType\n");
+        double runningBalance = 0.0;
         for (Transaction transaction : transactions) {
-            statement.append(transaction.toString()).append("\n");
+            runningBalance += transaction.getAmount();
+            statement.append(transaction.getDate())
+                    .append("\t").append(transaction.getAmount())
+                    .append("\t\t").append(runningBalance)
+                    .append("\t\t").append(transaction.getType())
+                    .append("\n");
         }
+        statement.append("Total Balance:\t\t\t").append(runningBalance).append("\n");
         return statement.toString();
     }
+
+
+
 
     public double getBalance() {
         return balance;
@@ -48,7 +64,7 @@ public class Account {
     }
 
     private void validateSufficientBalance(double amount) {
-        if (amount > balance) {
+        if (-amount > balance) {
             throw new InsufficientBalanceException("Insufficient balance for withdrawal: " + amount);
         }
     }

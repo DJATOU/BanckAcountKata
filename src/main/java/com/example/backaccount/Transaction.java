@@ -12,4 +12,16 @@ public record Transaction(LocalDate date, double amount, double balance, Transac
         String formattedBalance = decimalFormat.format(balance);
         return date + "\t" + formattedAmount + "\t\t" + formattedBalance + "\t\t" + type;
     }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public TransactionType getType() {
+        return type;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
 }
